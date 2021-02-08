@@ -66,6 +66,27 @@ class NstModuleWrapper:
             loss += torch.nn.functional.mse_loss(value, target)
         return loss / len(self._style_out)
 
+    def run_optimizer_step(self,
+                           input_tensor: torch.Tensor,
+                           optimizer: torch.optim.Optimizer,
+                           style_weight: float = 1e6,
+                           content_weight: float = 1):
+        """
+        TODO
+        """
+        def closure():
+            input_tensor.data.clamp_(0, 1)
+            optimizer.zero_grad()
+            self.call(input_tensor)
+
+            style_loss = self.compute_style_loss() * style_weight
+            content_loss = self.compute_content_loss() * content_weight
+
+            loss = style_loss + content_loss
+            loss.backward()
+            return loss
+        optimizer.step(closure)
+
     def set_style_image(self, image: torch.Tensor):
         """Processes the style image and saves its features for the style
         transfer process.

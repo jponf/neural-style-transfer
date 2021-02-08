@@ -31,7 +31,7 @@ def main():
                                  key="style_image")
     if style_img is not None:
         style_img = Image.open(style_img).convert("RGB")
-        st.image(content_img, caption="Style Image")
+        st.image(style_img, caption="Style Image")
 
     # Output size & other settings
     img_width = st.sidebar.number_input(
@@ -99,20 +99,9 @@ def _run_nst(model, content_img, style_img, n_iterations,
     optimizer = torch.optim.LBFGS([input_img_tensor])
 
     pbar = st.progress(0.0)
-    def _optim_closure():
-        input_img_tensor.data.clamp_(0, 1)
-        optimizer.zero_grad()
-        model.call(input_img_tensor)
-
-        style_loss = model.compute_style_loss() * style_weight
-        content_loss = model.compute_content_loss() * content_weight
-
-        loss = style_loss + content_loss
-        loss.backward()
-        return loss
-
     for i in range(n_iterations):
-        optimizer.step(_optim_closure)
+        model.run_optimizer_step(input_img_tensor, optimizer,
+                                 style_weight, content_weight)
         pbar.progress((i + 1) / n_iterations)
 
 
