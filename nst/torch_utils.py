@@ -72,9 +72,19 @@ class NstModuleWrapper:
                            style_weight: float = 1e6,
                            content_weight: float = 1):
         """
-        TODO
+
+        Returns
+        -------
+        style_loss : float
+            Style loss after running one step.
+        content_loss : float
+            Content loss after running one step.
         """
+        style_loss = None
+        content_loss = None
         def closure():
+            nonlocal style_loss, content_loss
+
             input_tensor.data.clamp_(0, 1)
             optimizer.zero_grad()
             self.call(input_tensor)
@@ -85,7 +95,9 @@ class NstModuleWrapper:
             loss = style_loss + content_loss
             loss.backward()
             return loss
+
         optimizer.step(closure)
+        return style_loss, content_loss
 
     def set_style_image(self, image: torch.Tensor):
         """Processes the style image and saves its features for the style
