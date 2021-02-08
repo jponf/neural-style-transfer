@@ -207,4 +207,4 @@ def compute_gram_matrix(inputs):
 
     # we 'normalize' the values of the gram matrix
     # by dividing by the number of element in each feature maps.
-    return gram.div(batch_size * height * width)
+    return gram.div(height * width)
