@@ -50,7 +50,7 @@ def main():
                                              value=1)
     style_weight = st.sidebar.number_input(label="Style loss weight",
                                            min_value=1, max_value=1000000,
-                                           value=1000000)
+                                           value=1000)
     if torch.cuda.is_available():
         use_gpu = st.sidebar.checkbox("Use GPU", value=True)
 
@@ -83,9 +83,10 @@ def _run_nst(model, content_img, style_img, n_iterations,
              content_weight, style_weight, use_gpu):
     if use_gpu:
         device = torch.device("cuda")
+    else:
+        device = torch.device("cpu")
 
     model.to(device)
-
     with st.spinner("Computing content features ..."):
         content_tensor = _to_tensor(content_img).to(device)
         model.set_content_image(content_tensor)
@@ -99,10 +100,20 @@ def _run_nst(model, content_img, style_img, n_iterations,
     optimizer = torch.optim.LBFGS([input_img_tensor])
 
     pbar = st.progress(0.0)
+    ptext = st.empty()
+    img_result = st.empty()
+
+    ptext.text("0/{} - Style Loss: NA - Content Loss: NA".format(n_iterations))
+    img_result.image(_to_image(input_img_tensor.squeeze(0)))
     for i in range(n_iterations):
-        model.run_optimizer_step(input_img_tensor, optimizer,
+        s_loss, c_loss = model.run_optimizer_step(input_img_tensor, optimizer,
                                  style_weight, content_weight)
+
         pbar.progress((i + 1) / n_iterations)
+        ptext.text("{}/{} - Style Loss: {:.4f} - "
+                   "Content Loss: {:.4f}".format(i + 1, n_iterations,
+                                                 s_loss, c_loss))
+        img_result.image(_to_image(input_img_tensor.squeeze(0)))
 
 
 def _to_tensor(pil_image):
